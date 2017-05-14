@@ -36,19 +36,19 @@ public class MainActivity extends AppCompatActivity implements SourceAdapter.ISo
     
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         StaggeredGridLayoutManager layoutManager =
-                new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+                new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(layoutManager);
         mAdapter = new SourceAdapter(this, mList);
         recyclerView.setAdapter(mAdapter);
     
-        setTitle("News Source");
+        setTitle("Popular Movies");
     
         downloadDataSources();
     }
     
     private void downloadDataSources()
     {
-        String url = "https://newsapi.org/v1/sources?language=en";
+        String url = "https://api.themoviedb.org/3/movie/popular?api_key=ba8049249923de75707c1086afd6172d&language=en-US&page=1";
         
         GsonGetRequest<SourcesResponse> myRequest = new GsonGetRequest<SourcesResponse>
                 (url, SourcesResponse.class, null, new Response.Listener<SourcesResponse>()
@@ -58,10 +58,10 @@ public class MainActivity extends AppCompatActivity implements SourceAdapter.ISo
                     public void onResponse(SourcesResponse response)
                     {
                         Log.d("FLOW", "onResponse: " + (new Gson().toJson(response)));
-                        if (response.status.equals("ok"))
+                        if (response.page.equals("1"))
                         {
-                            fillColor(response.sources);
-                            mList.addAll(response.sources);
+                            fillColor(response.results);
+                            mList.addAll(response.results);
                             mAdapter.notifyDataSetChanged();
                         }
                     }
@@ -85,12 +85,11 @@ public class MainActivity extends AppCompatActivity implements SourceAdapter.ISo
     }
     
     @Override
-    public void showArticles(String id, String name, String sortBy)
+    public void showArticles(String id, String name)
     {
         Intent intent = new Intent(this, ArticlesActivity.class);
         intent.putExtra(SOURCEID, id);
         intent.putExtra(SOURCENAME, name);
-        intent.putExtra(SOURCESORTBY, sortBy);
         startActivity(intent);
     }
 }

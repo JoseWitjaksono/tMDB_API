@@ -1,5 +1,6 @@
 package id.sch.smktelkom_mlg.learn.clientserver1;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -8,38 +9,42 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 
-import id.sch.smktelkom_mlg.learn.clientserver1.adapter.ArticleAdapter;
-import id.sch.smktelkom_mlg.learn.clientserver1.model.Article;
 import id.sch.smktelkom_mlg.learn.clientserver1.model.ArticlesResponse;
 import id.sch.smktelkom_mlg.learn.clientserver1.service.GsonGetRequest;
 import id.sch.smktelkom_mlg.learn.clientserver1.service.VolleySingleton;
 
-public class ArticlesActivity extends AppCompatActivity implements ArticleAdapter.IArticleAdapter
+public class ArticlesActivity extends AppCompatActivity
 {
-    ArrayList<Article> mList = new ArrayList<>();
-    ArticleAdapter mAdapter;
-    
+    Context context;
+    ImageView ivArticle;
+    TextView tvTitle, tvDate, tvDesc;
+    String iurl;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        
+        setContentView(R.layout.article_list);
+
+        ivArticle = (ImageView) findViewById(R.id.imageViewArticle);
+        tvTitle = (TextView) findViewById(R.id.textViewTitle);
+        tvDate = (TextView) findViewById(R.id.textViewDate);
+        tvDesc = (TextView) findViewById(R.id.textViewDesc);
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
-        mAdapter = new ArticleAdapter(this, mList);
-        recyclerView.setAdapter(mAdapter);
-        
+
+        context = getApplicationContext();
+
         setTitle(getIntent().getStringExtra(MainActivity.SOURCENAME));
         
         downloadDataArticles();
@@ -48,9 +53,7 @@ public class ArticlesActivity extends AppCompatActivity implements ArticleAdapte
     private void downloadDataArticles()
     {
         String id = getIntent().getStringExtra(MainActivity.SOURCEID);
-        String sortby = getIntent().getStringExtra(MainActivity.SOURCESORTBY);
-        String url = "https://newsapi.org/v1/articles?source=" + id
-                + "&sortBy=" + sortby + "&apiKey=d66e77860d7d4fa29be1832f09f8f996";
+        String url = "https://api.themoviedb.org/3/movie/"+id+"?api_key=ba8049249923de75707c1086afd6172d&language=en-US";
         
         GsonGetRequest<ArticlesResponse> myRequest = new GsonGetRequest<ArticlesResponse>
                 (url, ArticlesResponse.class, null, new Response.Listener<ArticlesResponse>()
@@ -60,10 +63,18 @@ public class ArticlesActivity extends AppCompatActivity implements ArticleAdapte
                     public void onResponse(ArticlesResponse response)
                     {
                         Log.d("FLOW", "onResponse: " + (new Gson().toJson(response)));
-                        if (response.status.equals("ok"))
+                        if (response.status.equals("Released"))
                         {
-                            mList.addAll(response.articles);
-                            mAdapter.notifyDataSetChanged();
+                            iurl = "http://image.tmdb.org/t/p/w500/" + response.poster_path;
+                            tvTitle.setText(response.original_title);
+                            tvDate.setText("IMDB Ratings : "+response.vote_average);
+                            tvDesc.setText(response.overview);
+                            Glide.with(context).load(iurl)
+                                    .crossFade()
+                                    .centerCrop()
+                                    .placeholder(R.mipmap.ic_launcher_round)
+                                    .error(R.mipmap.ic_launcher)
+                                    .into(ivArticle);
                         }
                     }
                     
@@ -78,16 +89,7 @@ public class ArticlesActivity extends AppCompatActivity implements ArticleAdapte
                 });
         VolleySingleton.getInstance(this).addToRequestQueue(myRequest);
     }
-    
-    @Override
-    public void showDetail(String url)
-    {
-        Uri webpage = Uri.parse(url);
-        Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
-        if (intent.resolveActivity(getPackageManager()) != null)
-            startActivity(intent);
-    }
-    
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {

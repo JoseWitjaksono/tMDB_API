@@ -21,7 +21,9 @@ public class ArticlesResponse
     //            },]
     
     public String status;
-    public String source;
-    public String sortBy;
-    public List<Article> articles;
+    public String original_title;
+    public String overview;
+    public String poster_path;
+    public String homepage;
+    public String vote_average;
 }
